@@ -2,4 +2,106 @@
 title: "Lecture 12 - 10/11"
 output: html_document
 ---
+```{r}
+library(tidyverse)
+library(rvest)
+library(httr)
+```
+
+#Scraping web content
+Notes: want to keep html (content e.g. tables) without all the css (styling) code
+
+#Load data from web
+```{r}
+url = "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+drug_use_xml = read_html(url)
+
+drug_use_xml %>%      #extract tables from the original page 
+  html_nodes(css = "table")
+```
+
+```{r}
+table_marj = (drug_use_xml %>% html_nodes(css = "table"))[[1]] %>%
+  html_table()  %>%
+  .[-1,] %>% 
+  as_tibble()
+
+table_marj
+```
+
+#Learning Assessment
+Create a data frame that contains the cost of living table for New York from: https://www.bestplaces.net/cost_of_living/city/new_york/new_york.
+
+```{r}
+```
+
+#CSS Selectors 
+```{r}
+#extract data based on tagging certain keywords/codes/formats then put it into a vector/tibble. we're going to use the R package "rvest"
+hpsaga_html = read_html("https://www.imdb.com/list/ls000630791/")
+```
+
+
+```{r}
+title_vec = hpsaga_html %>%
+  html_nodes(".lister-item-header a") %>%
+  html_text()
+
+gross_rev_vec = hpsaga_html %>%
+  html_nodes(".text-small:nth-child(7) span:nth-child(5)") %>%
+  html_text()
+
+runtime_vec = hpsaga_html %>%
+  html_nodes(".runtime") %>%
+  html_text()
+
+hpsaga_df = tibble(
+  title = title_vec,
+  rev = gross_rev_vec,
+  runtime = runtime_vec
+)
+```
+
+#learning assessment: 
+https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber=1 contains the 10 most recent reviews of the movie “Napoleon Dynamite”. Use a process similar to the one above to extract the titles of the reviews. Note: getting the star ratings from Amazon is trickier, but the CSS path. Also, use #cm_cr-review_list .review-rating"
+```{r}
+```
+
+#Using APIs
+make requests for data from a server (diff than scraping it yourself)
+we'll use the program "GET" to retrieve info from specific URLs and put it into R. 
+especially useful if the dataset you want is being updated continuously. 
+sometimes, you'll get a csv (ideal) but most of the time you'll get a javascript object notation (json)
+```{r}
+nyc_water = GET("https://data.cityofnewyork.us/resource/waf7-5gvc.csv") %>% 
+  content("parsed")
+```
+
+```{r}
+nyc_water = GET("https://data.cityofnewyork.us/resource/waf7-5gvc.json") %>% 
+  content("text") %>%
+  jsonlite::fromJSON() %>%
+  as_tibble()
+```
+
+```{r}
+brfss_smart2010 = 
+  GET("https://data.cdc.gov/api/views/acme-vg9e/rows.csv?accessType=DOWNLOAD") %>% 
+  content("parsed")
+```
+
+pokemon API 
+```{r}
+poke = GET("http://pokeapi.co/api/v2/pokemon/1") %>%
+  content()
+
+poke$name
+
+poke$height
+
+poke$abilities
+```
+
+Final Notes: 
+Some companies that make data publicly available WOULD notice if you tried to read data from thousands of pages every time you knitted a document.
 
